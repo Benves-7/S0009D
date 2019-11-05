@@ -3,6 +3,10 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Don't track content of these folders
+cmake-build-debug/
+.idea/
+
 # User-specific files
 *.rsuser
 *.suo
