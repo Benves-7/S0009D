@@ -4,157 +4,182 @@
 //------------------------------------------------------------------------------
 #include "config.h"
 #include "exampleapp.h"
+
 #include <cstring>
 
-const GLchar* vs =
-"#version 430\n"
-"layout(location=0) in vec3 pos;\n"
-"layout(location=1) in vec4 color;\n"
-"layout(location=0) out vec4 Color;\n"
-"void main()\n"
-"{\n"
-"	gl_Position = vec4(pos, 1);\n"
-"	Color = color;\n"
-"}\n";
 
-const GLchar* ps =
-"#version 430\n"
-"layout(location=0) in vec4 color;\n"
-"out vec4 Color;\n"
-"void main()\n"
-"{\n"
-"	Color = color;\n"
-"}\n";
-
+int LightNode::id = 0;
 using namespace Display;
 namespace Example
 {
-
-//------------------------------------------------------------------------------
-/**
-*/
-ExampleApp::ExampleApp()
-{
-	// empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-ExampleApp::~ExampleApp()
-{
-	// empty
-}
-
-//------------------------------------------------------------------------------
-/**
-*/
-bool
-ExampleApp::Open()
-{
-	App::Open();
-	this->window = new Display::Window;
-	window->SetKeyPressFunction([this](int32, int32, int32, int32)
+	//------------------------------------------------------------------------------
+	/**
+	*/
+	bool
+		ExampleApp::Open()
 	{
-		this->window->Close();
-	});
+		App::Open();
+		this->window = new Display::Window;
 
-	GLfloat buf[] =
-	{
-		-0.5f,	-0.5f,	-1,			// pos 0
-		1,		0,		0,		1,	// color 0
-		0,		0.5f,	-1,			// pos 1
-		0,		1,		0,		1,	// color 0
-		0.5f,	-0.5f,	-1,			// pos 2
-		0,		0,		1,		1	// color 0
-	};
-
-	if (this->window->Open())
-	{
-		// set clear color to gray
-		glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-
-		// setup vertex shader
-		this->vertexShader = glCreateShader(GL_VERTEX_SHADER);
-		GLint length = static_cast<GLint>(std::strlen(vs));
-		glShaderSource(this->vertexShader, 1, &vs, &length);
-		glCompileShader(this->vertexShader);
-
-		// get error log
-		GLint shaderLogSize;
-		glGetShaderiv(this->vertexShader, GL_INFO_LOG_LENGTH, &shaderLogSize);
-		if (shaderLogSize > 0)
+		if (this->window->Open())
 		{
-			GLchar* buf = new GLchar[shaderLogSize];
-			glGetShaderInfoLog(this->vertexShader, shaderLogSize, NULL, buf);
-			printf("[SHADER COMPILE ERROR]: %s", buf);
-			delete[] buf;
+			// Z-buffer
+			glEnable(GL_DEPTH_TEST);
+			glDepthFunc(GL_LESS);
+
+			// set clear color to gray
+			glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
+
+			//Setup
+			camera_.setup();
+			glDisable(GL_FRAMEBUFFER_SRGB);
+
+			std::shared_ptr<LightNode> light = std::make_shared<LightNode>();
+			std::shared_ptr<MeshResource> mesh = std::make_shared<MeshResource>();
+			std::shared_ptr<TextureResource> texture = std::make_shared<TextureResource>();
+			std::shared_ptr<ShaderObject> shader = std::make_shared<ShaderObject>();
+
+			mesh->loadOBJ("lumberJack.obj");
+			mesh->setup();					//VAO
+			mesh->bindVertexbuffer();		//VBO
+			mesh->bindIndexBuffer();		//EBO
+			mesh->bindPointers();			//read protocols
+
+			shader->loadShaders("vs.shader", "fs.shader");
+
+			texture->makeTexture("lumberJack_diffuse.png");
+			texture->bindTexture();
+
+			float move = 0.0;
+			for (int i = 0; i < 1; i++)
+			{
+				GraphicsNode temp;
+
+				temp.setMeshClass(mesh);
+				temp.setTextureResource(texture);
+				temp.setShaderObject(shader);
+				temp.setLightNode(light);
+				nodes.push_back(temp);
+			}
+			for (int i = 0; i < nodes.size(); i++)
+			{
+				GraphicsNode& node = nodes[i];
+				node.translate(Vector4D(move, 3.0, 0.0, 0.0));
+				node.scaling(Vector4D(3.0, 3.0, 3.0, 1.0));
+				move = move + 6.0f;
+			}
+
+			window->SetMousePressFunction([this](int32 button, int32 action, int32 mods)
+			{
+				if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS)
+				{
+					this->leftmousebuttonpressed = true;
+				}
+				else if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE)
+				{
+					this->leftmousebuttonpressed = false;
+				}
+			});
+
+			window->SetMouseMoveFunction([this](float64 xpos, float64 ypos)
+			{
+				float radianconversion = 3.1415926 / 180; // g�nger f�r att f� radian.
+
+				if (this->leftmousebuttonpressed && lastX != 0)
+				{
+					float xoffset = xpos - lastX;
+					float yoffset = lastY - ypos; // reversed since y-coordinates range from bottom to top
+					lastX = xpos;
+					lastY = ypos;
+
+					float sensitivity = 0.15f;
+					xoffset *= sensitivity;
+					yoffset *= sensitivity;
+
+					yaw += xoffset;
+					pitch += yoffset;
+
+					if (pitch > 89.0f)
+						pitch = 89.0f;
+					if (pitch < -89.0f)
+						pitch = -89.0f;
+
+					Vector4D front;
+					front.SetX(cos(pitch * radianconversion) * cos(yaw * radianconversion));
+					front.SetY(sin(pitch * radianconversion));
+					front.SetZ(cos(pitch * radianconversion) * sin(yaw * radianconversion));
+					Vector4D temp = front.Normalize();
+					camera_.changeCameraFront(front);
+				}
+				lastX = xpos; lastY = ypos;
+			});
+
+			window->SetKeyPressFunction([this](int32 key, int32 i, int32 action, int32 modifier)
+			{
+				if ((key == GLFW_KEY_A || key == GLFW_KEY_LEFT) && (action == GLFW_REPEAT || action == GLFW_PRESS))
+				{
+					camera_.moveCameraL();
+				}
+				if ((key == GLFW_KEY_D || key == GLFW_KEY_RIGHT) && (action == GLFW_REPEAT || action == GLFW_PRESS))
+				{
+					camera_.moveCameraR();
+				}
+				if ((key == GLFW_KEY_W || key == GLFW_KEY_UP) && (action == GLFW_REPEAT || action == GLFW_PRESS))
+				{
+					camera_.moveCameraF();
+				}
+				if ((key == GLFW_KEY_S || key == GLFW_KEY_DOWN) && (action == GLFW_REPEAT || action == GLFW_PRESS))
+				{
+					camera_.moveCameraB();
+				}
+				if (key == GLFW_KEY_SPACE && (action == GLFW_REPEAT || action == GLFW_PRESS))
+				{
+					camera_.moveCameraU();
+				}
+				if (key == GLFW_KEY_Q && (action == GLFW_REPEAT || action == GLFW_PRESS))
+				{
+					camera_.moveCameraD();
+				}
+				if (key == GLFW_KEY_T && action == GLFW_PRESS)
+				{
+					camera_.printCameraPos();
+				}
+
+				if (key == GLFW_KEY_ESCAPE)
+					this->window->Close();
+			});
+			return true;
 		}
-
-		// setup pixel shader
-		this->pixelShader = glCreateShader(GL_FRAGMENT_SHADER);
-		length = static_cast<GLint>(std::strlen(ps));
-		glShaderSource(this->pixelShader, 1, &ps, &length);
-		glCompileShader(this->pixelShader);
-
-		// get error log
-		shaderLogSize;
-		glGetShaderiv(this->pixelShader, GL_INFO_LOG_LENGTH, &shaderLogSize);
-		if (shaderLogSize > 0)
-		{
-			GLchar* buf = new GLchar[shaderLogSize];
-			glGetShaderInfoLog(this->pixelShader, shaderLogSize, NULL, buf);
-			printf("[SHADER COMPILE ERROR]: %s", buf);
-			delete[] buf;
-		}
-
-		// create a program object
-		this->program = glCreateProgram();
-		glAttachShader(this->program, this->vertexShader);
-		glAttachShader(this->program, this->pixelShader);
-		glLinkProgram(this->program);
-		glGetProgramiv(this->program, GL_INFO_LOG_LENGTH, &shaderLogSize);
-		if (shaderLogSize > 0)
-		{
-			GLchar* buf = new GLchar[shaderLogSize];
-			glGetProgramInfoLog(this->program, shaderLogSize, NULL, buf);
-			printf("[PROGRAM LINK ERROR]: %s", buf);
-			delete[] buf;
-		}
-
-		// setup vbo
-		glGenBuffers(1, &this->triangle);
-		glBindBuffer(GL_ARRAY_BUFFER, this->triangle);
-		glBufferData(GL_ARRAY_BUFFER, sizeof(buf), buf, GL_STATIC_DRAW);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-		return true;
+		return false;
 	}
-	return false;
-}
 
-//------------------------------------------------------------------------------
-/**
-*/
-void
-ExampleApp::Run()
-{
-	while (this->window->IsOpen())
+	//------------------------------------------------------------------------------
+	/**
+	*/
+	void
+		ExampleApp::Run()
 	{
-		glClear(GL_COLOR_BUFFER_BIT);
-		this->window->Update();
+		float rot = 0;
+		while (this->window->IsOpen())
+		{
+			glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+			this->window->Update();
 
-		// do stuff
-		glBindBuffer(GL_ARRAY_BUFFER, this->triangle);
-		glUseProgram(this->program);
-		glEnableVertexAttribArray(0);
-		glEnableVertexAttribArray(1);
-		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float32) * 7, NULL);
-		glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, sizeof(float32) * 7, (GLvoid*)(sizeof(float32) * 3));
-		glDrawArrays(GL_TRIANGLES, 0, 3);
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+			float radius = 1.f;
+			float x = sin(glfwGetTime()) * radius;
+			float z = cos(glfwGetTime()) * radius;
+			float y = sin(glfwGetTime()) * radius;
 
-		this->window->SwapBuffers();
+			for (GraphicsNode node : nodes)
+			{
+				node.getLightClass()->setLightPos(Vector4D(x, 2.f, z, 1.0));
+				node.setCamera(camera_);
+				node.draw();
+			}
+
+			this->window->SwapBuffers();
+			rot = rot + 0.01;
+		}
 	}
-}
 
 } // namespace Example
