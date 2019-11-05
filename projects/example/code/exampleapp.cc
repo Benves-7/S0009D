@@ -39,15 +39,24 @@ namespace Example
 			std::shared_ptr<TextureResource> texture = std::make_shared<TextureResource>();
 			std::shared_ptr<ShaderObject> shader = std::make_shared<ShaderObject>();
 
-			mesh->loadOBJ("lumberJack.obj");
+			if(!mesh->loadOBJ("lumberJack.obj"))
+            {
+			    window->Close();
+            }
 			mesh->setup();					//VAO
 			mesh->bindVertexbuffer();		//VBO
 			mesh->bindIndexBuffer();		//EBO
 			mesh->bindPointers();			//read protocols
 
-			shader->loadShaders("vs.shader", "fs.shader");
+			if (!shader->loadShaders("vs.shader", "fs.shader"))
+            {
+			    window->Close();
+            }
 
-			texture->makeTexture("lumberJack_diffuse.png");
+			if (!texture->makeTexture("lumberJack_diffuse.png"))
+            {
+			    window->Close();
+            }
 			texture->bindTexture();
 
 			float move = 0.0;
