@@ -9,7 +9,7 @@ FILE(GLOB example_shaders code/Shaders/*.shader)
 FILE(GLOB example_textures code/Texture/*.jpg)
 FILE(GLOB example_obj code/Obj/*.obj)
 
-SET(files_example ${example_headers} ${example_sources})
+SET(files_example ${example_headers} ${example_sources} code/mathlib.h)
 SOURCE_GROUP("example" FILES ${files_example})
 
 ADD_EXECUTABLE(example ${files_example})

@@ -410,7 +410,11 @@ Vector4D Vector4D::Normalize()
 }
 Vector4D Vector4D::cross(Vector4D lhs, Vector4D rhs)
 {
-	Vector4D temp((lhs.cord[1] * rhs.cord[2] - lhs.cord[2] * rhs.cord[1]), (lhs.cord[2] * rhs.cord[0] - lhs.cord[0] * rhs.cord[2]), (lhs.cord[0] * rhs.cord[1] - lhs.cord[1] * rhs.cord[0]), 1.0f);
+	Vector4D temp(
+	        (lhs.cord[1] * rhs.cord[2] - lhs.cord[2] * rhs.cord[1]),
+	        (lhs.cord[2] * rhs.cord[0] - lhs.cord[0] * rhs.cord[2]),
+	        (lhs.cord[0] * rhs.cord[1] - lhs.cord[1] * rhs.cord[0]),
+	        1.0f);
 	return temp;
 }
 ///Gets Length of the vector
@@ -797,7 +801,7 @@ void Matrix4D::InversThis()
 	if (det == 0)
 	{
 		printf("Invalid invers: identity returned\n");
-		Set(1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+		SetI();
 		return;
 	}
 

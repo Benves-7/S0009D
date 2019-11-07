@@ -50,16 +50,16 @@ public:
 
 	//Konstructorer
 	Matrix2D();												// skapar en identitetsmatris
-	Matrix2D(float x1, float y1, float x2, float y2);		// skapar en matris med fyra värden
-	Matrix2D(Vector2D x, Vector2D y);							// skapar en matris med två vectorer (sparas på samma sätt..)
+	Matrix2D(float x1, float y1, float x2, float y2);		// skapar en matris med fyra vï¿½rden
+	Matrix2D(Vector2D x, Vector2D y);							// skapar en matris med tvï¿½ vectorer (sparas pï¿½ samma sï¿½tt..)
 	Matrix2D(const Matrix2D& a);							// skapar en kopia av matrisen.
 	Matrix2D(float degrees);
 
 	~Matrix2D();
 
 	//Funktioner
-	void Set(float x1, float y1, float x2, float y2);		// sätter värden med fyra värden
-	void Set(Vector2D x, Vector2D y);							// sätter värden med två vectorer
+	void Set(float x1, float y1, float x2, float y2);		// sï¿½tter vï¿½rden med fyra vï¿½rden
+	void Set(Vector2D x, Vector2D y);							// sï¿½tter vï¿½rden med tvï¿½ vectorer
 	void Set(float degrees);
 	void Rot(float degrees);
 	void Transponat();
@@ -71,9 +71,9 @@ public:
 	inline void Print() const { printf("\n Matrix = %0.1f : %0.1f \n          %0.1f : %0.1f\n", matrix[0][0], matrix[0][1], matrix[1][0], matrix[1][1]); }
 
 	//Operatorer
-	void operator=(Matrix2D& rhs);							//kolla (matrix = matrix) = kopia med sammam värden. 
+	void operator=(Matrix2D& rhs);							//kolla (matrix = matrix) = kopia med sammam vï¿½rden. 
 	void operator*(float rhs);								//kolla (matrix * 4)
-	Vector2D operator*(Vector2D rhs);							//kolla (matrix * vector)
+	Vector2D operator*(Vector2D rhs);						//kolla (matrix * vector)
 	Matrix2D operator*(Matrix2D rhs);
 
 private:
@@ -98,8 +98,8 @@ public:
 	~Matrix3D();
 
 	//Funktioner
-	void Set(float x1, float y1, float x2, float y2);		// sätter värden med fyra värden
-	void Set(Vector2D x, Vector2D y);							// sätter värden med två vectorer
+	void Set(float x1, float y1, float x2, float y2);		// sï¿½tter vï¿½rden med fyra vï¿½rden
+	void Set(Vector2D x, Vector2D y);							// sï¿½tter vï¿½rden med tvï¿½ vectorer
 	void Set(float degrees);
 	void SetSize(float sizeX, float sizeY);
 	void Rot(float degrees);
